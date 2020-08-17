@@ -1,0 +1,54 @@
+version: '3.5'
+services:
+ mysql-server:
+  image: mysql:5.7
+  ports:
+   - '3306:3306'
+  volumes:
+   - mysql-data:/var/lib/mysql
+  environment:
+   MYSQL_ROOT_PASSWORD: root
+   MYSQL_USER: app42
+   MYSQL_PASSWORD: app42_password
+   MYSQL_DATABASE: app42
+  networks:
+   app_net:
+     aliases:
+      - mysql-server
+      - db
+
+ build-server:
+  build:
+   context: ./maven-container
+   dockerfile: Dockerfile
+  volumes:
+#   - ./tomcat-container:/opt
+   - war-data:/opt
+
+ production-server:
+  build:
+   context: ./tomcat-container
+   dockerfile: Dockerfile
+  ports:
+   - '7000:8080'
+  volumes:
+   - war-data:/usr/local/tomcat/webapps
+  links:
+   - mysql-server:mysql-server
+  networks:
+   app_net:
+
+  
+volumes:
+ mysql-data:
+ war-data:
+networks:
+ app_net:
+  driver: bridge
+  driver_opts: 
+    com.docker.network.enable_ipv6: "false"
+#  internal: true
+  ipam:
+   driver: default
+   config:
+   - subnet: 172.10.10.0/24
